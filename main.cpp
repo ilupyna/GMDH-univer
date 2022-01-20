@@ -91,8 +91,7 @@ class MGUA {
 	vector<vector<vector<int>>> functions;
 	
 	vector<vector<Solution>> solutions_by_iterations;
-	
-	int iteration = 1;
+	Solution best_solution;
 	
 	
 	void FirstSetup() {
@@ -104,7 +103,7 @@ class MGUA {
 	}
 	
 	
-	void GetFunctionsFromBestsolutions_by_iterations(const int count=8) {
+	void GetFunctionsFromBestSolutions(const int count=8) {
 		vector<vector<vector<int>>> variables;
 		for(int i=0; i<count && i<solutions_by_iterations.back().size(); i++) {
 			variables.push_back(solutions_by_iterations.back().at(i).func);
@@ -194,10 +193,10 @@ public:
 		
 		do {
 			solutions_by_iterations.push_back({});
-			Getsolutions_by_iterationsFromFunctions();
+			GetSolutionFromFunctions();
 			
 			if(solutions_by_iterations.back().size() == 0) {
-				cout<<"there is no good solutions on "<< iteration <<" iteration"<<endl;
+				cout<<"there is no good solutions on "<< solutions_by_iterations.size() <<" iteration"<<endl;
 				cout<<endl;
 				solutions_by_iterations.pop_back();
 				break;
@@ -206,34 +205,68 @@ public:
 			sort(solutions_by_iterations.back().begin(), solutions_by_iterations.back().end(), [](const auto& lhs, const auto& rhs){
 				return lhs.diff < rhs.diff;
 			});
-			cout<<"Top3 solutions on "<< iteration <<" iteration:"<<endl;
+			cout<<"Top3 solutions on "<< solutions_by_iterations.size() <<" iteration:"<<endl;
 			for(int i=0; i<solutions_by_iterations.back().size() && i<3; i++) {
 				cout<< solutions_by_iterations.back().at(i).func <<"\nwith standart deviation: "
 					<< solutions_by_iterations.back().at(i).diff <<endl;
 			}
 			cout<<endl;
 			
-			GetFunctionsFromBestsolutions_by_iterations();
-			++iteration;
+			GetFunctionsFromBestSolutions();
 		}
 		while(NeedAnotherIteration());
 		
 		
 		cout<<"So best solution is:\ny = a0";
-		const auto best = min_element(solutions_by_iterations.begin(), solutions_by_iterations.end(), [](const auto& lhs, const auto& rhs){
+		best_solution = min_element(solutions_by_iterations.begin(), solutions_by_iterations.end(), [](const auto& lhs, const auto& rhs){
 			return lhs.front().diff < rhs.front().diff;
 		})->front();
-		for(int i=0; i<best.func.size(); i++) {
-			cout<<" + a"<< i+1 <<"*X"<< best.func.at(i);
+		for(int i=0; i<best_solution.func.size(); i++) {
+			cout<<" + a"<< i+1 <<"*X"<< best_solution.func.at(i);
 		}
-		cout<<"\n"<< best.A <<"\nWith standart deviation: "<< best.diff <<endl;
+		cout<<"\n"<< best_solution.A <<"\nWith standart deviation: "<< best_solution.diff <<endl;
 		cout<<endl;
 	}
 	
 	
+	void FreeCheck() const {
+		cout<<"Vvedit znachennya X: "<<endl;
+		vector<double> X_input;
+		double Y_input;
+		for(int i=0; i<X_origin.front().size(); i++) {
+			double tmp;
+			cin >> tmp;
+			X_input.push_back(tmp);
+		}
+		cout<<"Vvedit znachennya Y: ";
+		cin >> Y_input;
+		cout<<endl;
+		
+		vector<double> equation = {1};
+		for(int tmp_level=0; tmp_level<best_solution.func.size(); tmp_level++) {
+			double tmp = 1;
+			for(auto i:best_solution.func.at(tmp_level)) {
+				tmp *= X_input.at(i);
+			}
+			equation.push_back(tmp);
+		}
+		/*
+		vector<double> check = {1, 1, 0.2, 1400, 37.4, 0.2};
+		const double y_check = 80;
+		*/
+		double sum = 0;
+		for(int i=0; i<best_solution.A.size(); i++) {
+			sum += equation[i] * best_solution.A.at(i);
+		}
+		cout<<"y origin: "<< Y_input <<endl
+			<<"y rozrah: "<< sum <<endl
+			<<"standart deviation: "<< pow(Y_input - sum, 2) <<endl;
+		cout<<endl;
+	}
+	
 private:
 	bool NeedAnotherIteration() const {
-		if(solutions_by_iterations.back().size() == 0) {
+		if(solutions_by_iterations.back().size() < 2) {
 			return false;
 		}
 		if(solutions_by_iterations.size() < 2) {
@@ -244,7 +277,7 @@ private:
 	}
 	
 	
-	void Getsolutions_by_iterationsFromFunctions() {
+	void GetSolutionFromFunctions() {
 //		cout<<"\nGetsolutions_by_iterationsFromFunctions"<<endl;
 		for(const auto& func:functions) {
 			const vector<double> solution = GetSolutionForFunction(func);
@@ -386,7 +419,7 @@ const vector<double> Read_Y_FromFile(const string FILENAME = "input y1.txt") {
 	else cout<<"Can't open input file"<<endl;
 }
 const pair<vector<vector<double>>, vector<vector<double>>> ReadFromFile(const string FILENAME = "input.txt") {
-	cout<<"ReadFromFile"<<endl;
+//	cout<<"ReadFromFile"<<endl;
 	ifstream in(FILENAME);
 	if(in.is_open()){
 		int n_for_x, n_for_y;
@@ -405,11 +438,13 @@ const pair<vector<vector<double>>, vector<vector<double>>> ReadFromFile(const st
 				Y.at(i).push_back(tmp);
 			}
 		}
-		cout<<"Data readed"<<endl;
+//		cout<<"Data readed"<<endl;
 		in.close();
 		return {X, Y};
 	}
-	else cout<<"Can't open input file"<<endl;
+	else {
+		cout<<"Can't open input file"<<endl;
+	}
 }
 
 
@@ -418,46 +453,23 @@ int main() {
 	cout<<"MGUA method"<<endl;
 	cout<<endl;
 	
-	const vector<vector<double>> inp = Read_X_FromFile();
-	/*{
-		{1, 0.1, 1000, 37.5, 0.6},
-		{1, 0.25, 1600, 37.3, 0.1},
-		{1, 0.4, 500, 36.8, 0.3},
-		
-		{2, 0.1, 1000, 36.8, 0.6},
-		{2, 0.25, 1600, 37.3, 0.1},
-		{2, 0.4, 500, 36.8, 0.3},
-		
-		{3, 0.1, 1600, 37.5, 0.3},
-		{3, 0.1, 1000, 37.5, 0.6},
-		{3, 0.4, 500, 36.8, 0.1},
-		
-		{4, 0.1, 1600, 37.7, 0.1},
-		{4, 0.25, 1000, 37.3, 0.6},
-		{4, 0.4, 500, 36.8, 0.3},
-		
-		{5, 0.1, 1600, 36.8, 0.3},
-		{5, 0.25, 500, 37.3, 0.6},
-		{5, 0.4, 1000, 36.8, 0.1},
-		
-		{6, 0.1, 1600, 36.8, 0.3},
-		{6, 0.25, 500, 37.3, 0.6},
-		{6, 0.4, 1000, 36.8, 0.1}
-	};
-	*/
-	const vector<double> y1 = Read_Y_FromFile("input y1.txt");//{101.8, 71.2, 95.2, 119.3, 58.1, 1023.2, 183.9, 166, 71.6, 38.9, 262.6, 823.1, 327.2, 223.7, 89.1, 246.4, 211, 66.8};
-	const vector<double> y2 = Read_Y_FromFile("input y2.txt");//{81.3, 129.3, 177.4, 81.3, 118.3, 432.4, 136.7, 133, 73.9, 33.3, 280.9, 291.9, 85, 251.3, 85, 70.2, 299.3, 70.2};
-	const vector<double> y3 = Read_Y_FromFile("input y3.txt");//{67.3, 127.1, 145.2, 205.5, 78.9, 375.9, 151.3, 128.1, 113.6, 140.7, 145.7, 111.6, 93, 131.7, 136.7, 205.5, 96.5, 119.6};
-	
-	const auto [X, Y] = ReadFromFile("input.txt");
+	cout<<"Write filename for input data (first line is 'x y', where 'x' is count of Xn in every line and 'y' is count of Yn in every line"<<endl;
+	cout<<"Filename: ";
+	string filename;
+	cin>> filename;
+	const auto [X, Y] = ReadFromFile(filename);
 	
 	cout<<"Data:"<<endl;
 	cout<<"Type\tt(mm)\tn(1/hv)\tD(mm)\ts(mm/1)\t |\tPx(H)\tPy(H)\tPz(H)"<<endl;
-	for(int i=0; i<inp.size(); i++) {
-		for(auto el:inp.at(i)) {
+	for(int i=0; i<X.size(); i++) {
+		for(const auto el:X.at(i)) {
 			cout<< el <<"\t";
 		}
-		cout<<" |\t"<< y1[i] <<"\t"<< y2[i] <<"\t"<< y3[i] <<endl;
+		cout<<" |\t";
+		for(int j=0; j<Y.size(); j++) {
+			cout<< Y.at(j).at(i) <<"\t";
+		}
+		cout<<endl;
 	}
 	cout<<endl;
 	
@@ -475,6 +487,19 @@ int main() {
 	cout<<"Third y"<<endl;
 	MGUA s3(X, Y[2]);
 	s3.Start();
+	
+	cout<<"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"<<endl;
+	cout<<"Free Check for First y"<<endl;
+	s1.FreeCheck();
+	cout<<endl;
+	
+	cout<<"Free Check for Second y"<<endl;
+	s2.FreeCheck();
+	cout<<endl;
+	
+	cout<<"Free Check for Third y"<<endl;
+	s3.FreeCheck();
+	cout<<endl;
 	/**/
 //	cout<<"fin"<<endl;
 		
