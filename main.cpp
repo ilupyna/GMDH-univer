@@ -21,6 +21,7 @@ ostream& operator << (ostream& os, const vector<T>& v) {
 	return os << "}";
 }
 
+
 void print(const vector<vector<double>>& v) {
 	for(auto ryad:v) {
 		for(auto el:ryad) {
@@ -30,6 +31,7 @@ void print(const vector<vector<double>>& v) {
 	}
 	cout<<endl;
 }
+
 
 vector<double> gaussa(vector<vector<double>> arr){
 	const int Size = arr.size();
@@ -73,11 +75,13 @@ vector<double> gaussa(vector<vector<double>> arr){
     return output;
 }
 
+
 struct Solution {
 	vector<vector<int>> func;
 	vector<double> A;
 	double diff;
 };
+
 
 class MGUA {
 	const vector<vector<double>> X_origin;
@@ -132,6 +136,84 @@ class MGUA {
 	}
 	
 	
+	void SortByDispX(const int learn_amount) {
+		vector<double> Ser;
+		vector<pair<int, double>> Disp;
+		
+		{
+			for(int i=0; i<X_origin.front().size(); i++) {
+				double sum = 0;
+				for(int j=0; j<X_origin.size(); j++) {
+					sum += X_origin.at(j).at(i);
+				}
+				Ser.push_back(sum/X_origin.size());
+			}
+		}
+		{
+			for(int i=0; i<X_origin.size(); i++) {
+				double sum = 0;
+				for(int j=0; j<X_origin.front().size(); j++) {
+					sum += pow(X_origin.at(i).at(j) - Ser.at(j), 2);
+				}
+				Disp.push_back({i, sum});
+			}
+		}
+		
+		sort(Disp.begin(), Disp.end(), [](const auto& lhs, const auto& rhs){
+			return lhs.second > rhs.second;
+		});
+		
+		for(int i=0; i<learn_amount; i++) {
+			learn_pos.push_back(Disp.at(i).first);
+		}
+		for(int i=learn_amount; i<X_origin.size(); i++) {
+			check_pos.push_back(Disp.at(i).first);
+		}
+	}
+	
+	void SortByDispY(const int learn_amount) {
+		vector<double> Ser;
+		vector<pair<int, double>> Disp;
+		
+		double ser = 0;
+		{
+			for(int i=0; i<Y_origin.size(); i++) {
+				ser += Y_origin.at(i);
+			}
+			ser /= Y_origin.size();
+		}
+		{
+			for(int i=0; i<Y_origin.size(); i++) {
+				Disp.push_back({i, pow(Y_origin.at(i) - ser, 2)});
+			}
+		}
+		
+		sort(Disp.begin(), Disp.end(), [](const auto& lhs, const auto& rhs){
+			return lhs.second > rhs.second;
+		});
+		
+		for(int i=0; i<learn_amount; i++) {
+			learn_pos.push_back(Disp.at(i).first);
+		}
+		for(int i=learn_amount; i<X_origin.size(); i++) {
+			check_pos.push_back(Disp.at(i).first);
+		}
+	}
+	
+	void SortByPos(const int learn_amount) {
+		const int every_n_for_check = X_origin.size()/(X_origin.size() - learn_amount);
+		
+		for(int i=0; i<X_origin.size(); i++) {
+			if(i % every_n_for_check == 0) {
+				check_pos.push_back(i);
+			}
+			else {
+				learn_pos.push_back(i);
+			}
+		}
+	}
+	
+	
 public:
 	MGUA(	const vector<vector<double>>& X_inp, 
 			const vector<double>& Y_inp, 
@@ -152,19 +234,13 @@ public:
 		}
 		
 		const int learn_amount = X_origin.size()*navch_chastka;
-		const int every_n_for_check = X_origin.size()/(X_origin.size() - X_origin.size()*navch_chastka);
 		
 		cout<<"learn:"<< learn_amount <<";\t check:"<< X_origin.size()-learn_amount <<endl;
 		cout<<endl;
 		
-		for(int i=0; i<X_origin.size(); i++) {
-			if(i % every_n_for_check == 0) {
-				check_pos.push_back(i);
-			}
-			else {
-				learn_pos.push_back(i);
-			}
-		}
+//		SortByDispX(learn_amount);
+		SortByDispY(learn_amount);
+//		SortByPos(learn_amount);
 		
 		cout<<"Learn data:"<<endl;
 		for(const auto i:learn_pos) {
@@ -263,6 +339,7 @@ public:
 			<<"standart deviation: "<< pow(Y_input - sum, 2) <<endl;
 		cout<<endl;
 	}
+	
 	
 private:
 	bool NeedAnotherIteration() const {
