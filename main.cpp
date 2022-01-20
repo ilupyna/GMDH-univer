@@ -81,8 +81,9 @@ class MGUA {
 	
 	vector<pair<vector<double>, double>> solutions;
 	
-	const int limit;
+	const int learn_amount;
 	int level;
+	
 	
 	void CreatePolynomCombinations() {
 //		cout<<"CreatePolynomCombinations"<<endl;
@@ -92,11 +93,11 @@ class MGUA {
 		}
 		
 		for(int i0=0; i0<X_origin.front().size(); i0++) {
-			for(int i1=i0+1; i1<X_origin.front().size(); i1++) {
+			for(int i1=i0+1; i1<X_origin.front().size(); i1++) {	//i1=i0+1
 				combinations.push_back({i0, i1});
 			}
 		}
-		
+		/*
 		for(int i0=0; i0<X_origin.front().size(); i0++) {
 			for(int i1=i0+1; i1<X_origin.front().size(); i1++) {
 				for(int i2=i1+1; i2<X_origin.front().size(); i2++) {
@@ -116,33 +117,24 @@ class MGUA {
 		}
 		
 		combinations.push_back({1, 2, 3, 4, 5});
-		
+		*/
 //		cout<<endl;
 	}
+	
 	
 public:
 	MGUA(	const vector<vector<double>>& X_inp, 
 			const vector<double>& Y_inp, 
-			const double navch_chastka = 1.0	)
+			const double navch_chastka = 0.85	)
 		:
 			X_origin(X_inp), 
 			Y_origin(Y_inp), 
-			limit(Y_inp.size()*navch_chastka),
+			learn_amount(Y_inp.size()*navch_chastka),
 			level(X_inp.front().size()-1)
 	{
-		cout<<"learn:"<< limit <<endl;
-		cout<<"check:"<< Y_origin.size()-limit <<endl;
-		
-		Y_learn.reserve(limit);
-		Y_check.reserve(Y_origin.size()-limit);
-		
-		for(int i=0; i<limit; i++) {
-			Y_learn.push_back(Y_inp[i]);
-		}
-		for(int i=limit; i<Y_inp.size(); i++) {
-			Y_check.push_back(Y_inp[i]);
-		}
+//		cout<<"learn:"<< learn_amount <<";\t check:"<< Y_origin.size()-learn_amount <<endl;
 	}
+	
 	
 	void Start() {
 		// y = c0 + c1x
@@ -150,7 +142,7 @@ public:
 		// y = c0 + c1x + c2x^2 + c3x^3 + c4x^4
 		
 		CreatePolynomCombinations();
-//		cout<<"combs:\n"<< combinations <<endl;
+//		cout<<"combs:\n"<< combinations <<endl;	
 //		cout<<"Set for max Kalmogorov-gabor polynom created"<<endl;
 //		cout<<endl;
 		
@@ -162,6 +154,23 @@ public:
 			GetNextSolution();
 		}
 		while(LastSolutionIsBetter());
+		
+		cout<<"learn:"<<endl;
+		for(int i=0; i<X_learn.size(); i++) {
+			for(int j=1; j<=X_origin.front().size(); j++) {
+				cout<< X_learn.at(i).at(j) <<"\t";
+			}
+			cout<<" |\t"<< Y_learn.at(i) <<endl;
+		}
+		cout<<endl;
+		cout<<"check:"<<endl;
+		for(int i=0; i<X_check.size(); i++) {
+			for(int j=1; j<=X_origin.front().size(); j++) {
+				cout<< X_check.at(i).at(j) <<"\t";
+			}
+			cout<<" |\t"<< Y_check.at(i) <<endl;
+		}
+		cout<<endl;
 		
 		const auto best = min_element(solutions.begin(), solutions.end(), [](const auto& lhs, const auto& rhs){
 			return lhs.second < rhs.second;
@@ -179,9 +188,11 @@ public:
 private:
 	bool LastSolutionIsBetter() const {
 //		return false;
-		return solutions.size() < combinations.size() - Y_origin.size();
+//		return solutions.size() < 5;
+		return solutions.size() < combinations.size() - X_origin.front().size();
 //		return solutions.at(solutions.size()-1).second < solutions.at(solutions.size()-2).second;
 	}
+	
 	
 	const vector<vector<int>> GetCombination() const {
 		vector<vector<int>> comb;
@@ -191,9 +202,9 @@ private:
 		return comb;
 	}
 	
+	
 	void GetNextSolution() {
 //		cout<<"\nGetNextSolution"<<endl;
-		
 		level++;
 		vector<double> solution = GetSolutionForCombination(GetCombination());
 		const double diff = CheckSolution(solution);
@@ -201,52 +212,52 @@ private:
 		solutions.push_back({solution, diff});
 	}
 	
+	
 	vector<double> GetSolutionForCombination(const vector<vector<int>> combination) {
 //		cout<<"GetSolutionForCombination"<<endl;
 		
 //		cout<<"Setting array for combination"<<endl;
 //		cout<< combination <<endl;
-		
 		X_learn.clear();
 		X_check.clear();
+		X_learn.reserve(learn_amount+1);
+		X_check.reserve(X_origin.size()-learn_amount+1);
 		
-		X_learn.reserve(limit+1);
-		X_check.reserve(Y_origin.size()-limit+1);
-		
-		for(int i=0; i<limit; i++) {
-			X_learn.push_back({1});
-			X_check.back().reserve(level+1);
+		for(int i=0; i<X_origin.size(); i++) {
+			vector<double> new_ryad = {1};
+			new_ryad.reserve(level+1);
 			for(int tmp_level=0; tmp_level<level; tmp_level++) {
 				double tmp = 1;
 				for(auto j:combination.at(tmp_level)) {
 					tmp *= X_origin[i][j];
 				}
-				X_learn.back().push_back(tmp);
+				new_ryad.push_back(tmp);
+			}
+			/*
+			if(i<learn_amount) {
+				X_learn.push_back(new_ryad);
+			}
+			else {
+				X_check.push_back(new_ryad);
+			}
+			*/
+			if(i % (X_origin.size()/(X_origin.size()-learn_amount)) == 0) {
+				X_check.push_back(new_ryad);
+				Y_check.push_back(Y_origin.at(i));
+			}
+			else {
+				X_learn.push_back(new_ryad);
+				Y_learn.push_back(Y_origin.at(i));
 			}
 		}
-		
-		for(int i=limit; i<X_origin.size(); i++) {
-			X_check.push_back({1});
-			X_check.back().reserve(level+1);
-			for(int tmp_level=0; tmp_level<level; tmp_level++) {
-				double tmp = 1;
-				for(auto j:combination.at(tmp_level)) {
-					tmp *= X_origin[i][j];
-				}
-				X_check.back().push_back(tmp);
-			}
-		}
-		
 //		cout<<"learn:"<<endl;
 //		print(X_learn);
 //		cout<<"check:"<<endl;
 //		print(X_check);
 //		cout<<"Vubirku podileno na navchalnu i perevirochnu"<<endl;
 		
-		
 //		cout<<"Setting system from array"<<endl;
 		vector<vector<double>> system_rivnyan;
-		
 		for(int k=0; k<level; k++) {
 			vector<double> tmp_ryad;
 			for(int i=0; i<level; i++) {
@@ -258,7 +269,6 @@ private:
 			}
 			system_rivnyan.push_back(tmp_ryad);
 		}
-		
 		for(int i=0; i<level; i++) {
 			double tmp = 0;
 			for(int j=0; j<X_learn.size(); j++) {
@@ -266,16 +276,32 @@ private:
 			}
 			system_rivnyan[i].push_back(tmp);
 		}
-		
 //		cout<<"system:"<<endl;
 //		print(system_rivnyan);
 		
 		return gaussa(system_rivnyan);
 	}
 	
+	
 	double CheckSolution(const vector<double> solution) const {
 //		cout<<"CheckSolution"<<endl;
-		
+		double diff = 0;
+		for(int i=0; i<X_check.size(); i++) {
+			double sum = 0;
+			for(int j=0; j<X_check.front().size(); j++) {
+				sum += X_check[i][j] * solution[j];
+//				cout<< X_check[i][j] <<"\t";
+			}
+			diff += pow(Y_check[i] - sum, 2);
+//			cout<< Y_check[i] <<" | "<< sum <<endl;
+		}
+//		cout<<"diff = "<< diff <<endl;
+		return diff / Y_check.size();
+	}
+	
+	
+	double CheckSolution_fake(const vector<double> solution) const {
+//		cout<<"CheckSolution_fake"<<endl;
 		vector<double> check = {1, 1, 0.2, 1400, 37.4, 0.2};
 		const double y_check = 80;
 		
@@ -286,10 +312,9 @@ private:
 			}
 			check.push_back(tmp);
 		}
-		/*
-		const vector<double> check = X_learn.at(4);
-		const double y_check = Y_learn.at(4);
-		*/
+//		const vector<double> check = X_learn.at(4);
+//		const double y_check = Y_learn.at(4);
+		
 		double result = 0;
 		
 //		cout<<"solution:\n"<< solution <<endl;
@@ -299,22 +324,7 @@ private:
 		}
 //		cout<<"res = "<< result <<"; origin = "<< y_check <<endl;
 //		cout<<endl;
-		
 		return pow(result - y_check, 2);
-		/*
-		double diff = 0;
-		for(int i=0; i<X_check.size(); i++) {
-			double sum = 0;
-			for(int j=0; j<X_check.front().size(); j++) {
-				sum += X_check[i][j] * solution[j];
-			}
-			diff += pow(Y_check[i] - sum, 2);
-//			cout<< Y_check[i] <<" | "<< sum <<endl;
-		}
-		
-		cout<<"diff = "<< diff <<endl;
-		return diff / Y_check.size();
-		*/
 	}
 };
 
@@ -363,15 +373,15 @@ int main() {
 	}
 	cout<<endl;
 	
-	cout<<"First y"<<endl;
+	cout<<"\nFirst y"<<endl;
 	MGUA s1(inp, y1);
 	s1.Start();
 	
-	cout<<"Second y"<<endl;
+	cout<<"\nSecond y"<<endl;
 	MGUA s2(inp, y2);
 	s2.Start();
 	
-	cout<<"Third y"<<endl;
+	cout<<"\nThird y"<<endl;
 	MGUA s3(inp, y3);
 	s3.Start();
 	/**/
