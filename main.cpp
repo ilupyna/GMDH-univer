@@ -4,6 +4,33 @@
 #include <algorithm>
 using namespace std;
 
+
+//template <class T>
+//bool operator ==(const vector<T>& lhs, const vector<T>& rhs) {
+//	if(lhs.size() == rhs.size()) {
+//		for(int i=0; i<lhs.size(); i++) {
+//			if(lhs.at(i) != rhs.at(i)) {
+//				return false;
+//			}
+//		}
+//		return true;
+//	}
+//	return false;
+//}
+//
+//template <class T>
+//bool operator <(const vector<T>& lhs, const vector<T>& rhs) {
+//	if(lhs.size() == rhs.size()) {
+//		for(int i=0; i<lhs.size(); i++) {
+//			if(lhs.at(i) != rhs.at(i)) {
+//				return lhs.at(i) < rhs.at(i);
+//			}
+//		}
+//		return false;
+//	}
+//	return lhs.size() < rhs.size();
+//}
+
 template <class T>
 ostream& operator << (ostream& os, const vector<T>& v) {
 	os << "{";
@@ -70,6 +97,12 @@ vector<double> gaussa(vector<vector<double>> arr){
     return output;
 }
 
+struct Solution {
+	vector<vector<int>> func;
+	vector<double> A;
+	double diff;
+};
+
 class MGUA {
 	const vector<vector<double>> X_origin;
 	const vector<double> Y_origin;
@@ -77,21 +110,28 @@ class MGUA {
 	vector<vector<double>> X_learn, X_check;
 	vector<double> Y_learn, Y_check;
 	
-	vector<vector<int>> combinations;
+	vector<int> learn_pos, check_pos;
 	
-	vector<pair<vector<double>, double>> solutions;
+//	vector<vector<double>> X_add;
+//	vector<double> Y_add;
+	
+	vector<vector<int>> combinations;
+	vector<vector<vector<int>>> functions;
+	
+	vector<Solution> solutions;
 	
 	const int learn_amount;
-	int level;
+	int level = 1;
+	int pos = 0;
 	
 	
 	void CreatePolynomCombinations() {
 //		cout<<"CreatePolynomCombinations"<<endl;
-		
+		/*
 		for(int i0=0; i0<X_origin.front().size(); i0++) {
 			combinations.push_back({i0});
 		}
-		
+		*/
 		for(int i0=0; i0<X_origin.front().size(); i0++) {
 			for(int i1=i0+1; i1<X_origin.front().size(); i1++) {	//i1=i0+1
 				combinations.push_back({i0, i1});
@@ -99,26 +139,61 @@ class MGUA {
 		}
 		/*
 		for(int i0=0; i0<X_origin.front().size(); i0++) {
+			combinations.push_back({i0});
 			for(int i1=i0+1; i1<X_origin.front().size(); i1++) {
-				for(int i2=i1+1; i2<X_origin.front().size(); i2++) {
-					combinations.push_back({i0, i1, i2});
-				}
+				combinations.push_back({i0, i1});
+//				for(int i2=i1+1; i2<X_origin.front().size(); i2++) {
+//					combinations.push_back({i0, i1, i2});
+//					for(int i3=i2+1; i3<X_origin.front().size(); i3++) {
+//						combinations.push_back({i0, i1, i2, i3});
+//					}
+//				}
 			}
 		}
+		*/
+//		combinations.push_back({0, 1, 2, 3, 4});
 		
-		for(int i0=0; i0<X_origin.front().size(); i0++) {
-			for(int i1=i0+1; i1<X_origin.front().size(); i1++) {
-				for(int i2=i1+1; i2<X_origin.front().size(); i2++) {
-					for(int i3=i2+1; i3<X_origin.front().size(); i3++) {
-						combinations.push_back({i0, i1, i2, i3});
+//		cout<<endl;
+	}
+	
+	
+	void CreateFunctinsFromCombinations() {
+		/*
+		for(int i0=0; i0<combinations.size(); i0++) {
+			functions.push_back({combinations.at(i0)});
+		}
+		
+		for(int i0=0; i0<combinations.size(); i0++) {
+			for(int i1=i0+1; i1<combinations.size(); i1++) {
+				functions.push_back({combinations.at(i0), combinations.at(i1)});
+			}
+		}
+		*/
+		for(int i0=0; i0<combinations.size(); i0++) {
+			functions.push_back({	combinations.at(i0)	});
+			/*
+			for(int i1=i0+1; i1<combinations.size(); i1++) {
+				functions.push_back({	combinations.at(i0), 
+										combinations.at(i1)	});
+				
+				for(int i2=i1+1; i2<combinations.size(); i2++) {
+					functions.push_back({	combinations.at(i0), 
+											combinations.at(i1), 
+											combinations.at(i2)	});
+					
+					for(int i3=i2+1; i3<combinations.size(); i3++) {
+						functions.push_back({	combinations.at(i0), 
+												combinations.at(i1), 
+												combinations.at(i2), 
+												combinations.at(i3)	});
 					}
 				}
 			}
+			*/
 		}
+//		sort(functions.begin(), functions.end());
 		
-		combinations.push_back({1, 2, 3, 4, 5});
-		*/
-//		cout<<endl;
+		cout<<"funcs:"<< functions <<endl;
 	}
 	
 	
@@ -129,10 +204,18 @@ public:
 		:
 			X_origin(X_inp), 
 			Y_origin(Y_inp), 
-			learn_amount(Y_inp.size()*navch_chastka),
-			level(X_inp.front().size()-1)
+			learn_amount(Y_inp.size()*navch_chastka)
 	{
-//		cout<<"learn:"<< learn_amount <<";\t check:"<< Y_origin.size()-learn_amount <<endl;
+		cout<<"learn:"<< learn_amount <<";\t check:"<< Y_origin.size()-learn_amount <<endl;
+		
+		for(int i=0; i<X_origin.size(); i++) {
+			if(i % (X_origin.size()/(X_origin.size()-learn_amount)) == 0) {
+				check_pos.push_back(i);
+			}
+			else {
+				learn_pos.push_back(i);
+			}
+		}
 	}
 	
 	
@@ -142,45 +225,48 @@ public:
 		// y = c0 + c1x + c2x^2 + c3x^3 + c4x^4
 		
 		CreatePolynomCombinations();
-//		cout<<"combs:\n"<< combinations <<endl;	
+//		cout<<"combs:\n"<< combinations <<endl;
+		CreateFunctinsFromCombinations();
+//		cout<<"funcs:\n"<< functions <<endl;
 //		cout<<"Set for max Kalmogorov-gabor polynom created"<<endl;
 //		cout<<endl;
 		
 		GetNextSolution();
 //		cout<<"First solution created"<<endl;
 //		cout<<endl;
-		
 		do {
 			GetNextSolution();
 		}
-		while(LastSolutionIsBetter());
+		while(LastSolutionIsBetter() && pos++ < functions.size());
+		
+		GenerateNextPairs();
+		
+		const auto best = min_element(solutions.begin(), solutions.end(), [](const auto& lhs, const auto& rhs){
+			return lhs.diff < rhs.diff;
+		});
 		
 		cout<<"learn:"<<endl;
-		for(int i=0; i<X_learn.size(); i++) {
-			for(int j=1; j<=X_origin.front().size(); j++) {
-				cout<< X_learn.at(i).at(j) <<"\t";
+		for(const auto i:learn_pos) {
+			for(int j=0; j<X_origin.front().size(); j++) {
+				cout<< X_origin.at(i).at(j) <<"\t";
 			}
-			cout<<" |\t"<< Y_learn.at(i) <<endl;
+			cout<<" |\t"<< Y_origin.at(i) <<endl;
 		}
 		cout<<endl;
 		cout<<"check:"<<endl;
-		for(int i=0; i<X_check.size(); i++) {
-			for(int j=1; j<=X_origin.front().size(); j++) {
-				cout<< X_check.at(i).at(j) <<"\t";
+		for(const auto i:check_pos) {
+			for(int j=0; j<X_origin.front().size(); j++) {
+				cout<< X_origin.at(i).at(j) <<"\t";
 			}
-			cout<<" |\t"<< Y_check.at(i) <<endl;
+			cout<<" |\t"<< Y_origin.at(i) <<endl;
 		}
 		cout<<endl;
 		
-		const auto best = min_element(solutions.begin(), solutions.end(), [](const auto& lhs, const auto& rhs){
-			return lhs.second < rhs.second;
-		});
-		
 		cout<<"Solution:\ny = a0";
-		for(int i=0; i<best->first.size(); i++) {
-			cout<<" + a"<< i+1 <<"*X"<< combinations[i];
+		for(int i=0; i<best->func.size(); i++) {
+			cout<<" + a"<< i+1 <<"*X"<< best->func.at(i);
 		}
-		cout<<"}\n"<< best->first <<"\nWith rel_y: "<< best->second <<endl;
+		cout<<"}\n"<< best->A <<"\nWith rel_y: "<< best->diff <<endl;
 		cout<<endl;
 	}
 	
@@ -188,59 +274,83 @@ public:
 private:
 	bool LastSolutionIsBetter() const {
 //		return false;
-//		return solutions.size() < 5;
-		return solutions.size() < combinations.size() - X_origin.front().size();
+//		return solutions.size() < 20;
+//		return pos < functions.size()-1;
+		return solutions.size() < functions.size();
+//		return solutions.size() < combinations.size() - X_origin.front().size();
 //		return solutions.at(solutions.size()-1).second < solutions.at(solutions.size()-2).second;
 	}
 	
 	
-	const vector<vector<int>> GetCombination() const {
-		vector<vector<int>> comb;
-		for(int i=0; i<level; i++) {
-			comb.push_back(combinations[i]);
+	void GenerateNextPairs() {
+		sort(solutions.begin(), solutions.end(), [](auto lhs, auto rhs){
+			return lhs.diff < rhs.diff;
+		});
+		
+		for(const auto el:solutions) {
+			cout<<": "<< el.func <<endl;
 		}
-		return comb;
+		cout<<endl;
+		
+		combinations.clear();
+		for(int i=0; i<3; i++) {
+			//combinations.push_back(solutions.at(i).func);
+		}
+		cout<<"new combs: "<< combinations <<endl;
+	}
+	
+	
+	const vector<vector<int>> GetFunction() const {
+//		cout<<"GetFunction:\n"<< functions.at(pos) <<endl;
+		return functions.at(pos);
 	}
 	
 	
 	void GetNextSolution() {
 //		cout<<"\nGetNextSolution"<<endl;
-		level++;
-		vector<double> solution = GetSolutionForCombination(GetCombination());
+		if(pos == combinations.size()-1) {
+			++level;
+		}
+		const auto new_function = GetFunction();
+		const vector<double> solution = GetSolutionForFunction(new_function);
 		const double diff = CheckSolution(solution);
 		
-		solutions.push_back({solution, diff});
+//		cout<<"func:"<< new_function <<endl 
+//			<<"solt:"<< solution <<endl 
+//			<<"diff:"<< diff <<endl
+//			<<endl; 
+		
+		solutions.push_back({new_function, solution, diff});
 	}
 	
 	
-	vector<double> GetSolutionForCombination(const vector<vector<int>> combination) {
-//		cout<<"GetSolutionForCombination"<<endl;
-		
-//		cout<<"Setting array for combination"<<endl;
-//		cout<< combination <<endl;
+	void SetArrayForMNK(const vector<vector<int>> function) {
+//		cout<<"SetArrayForMNK"<<endl;
+//		cout<<"func: "<< function <<endl;
 		X_learn.clear();
 		X_check.clear();
+		Y_learn.clear();
+		Y_check.clear();
+				
 		X_learn.reserve(learn_amount+1);
 		X_check.reserve(X_origin.size()-learn_amount+1);
+		Y_learn.reserve(learn_amount+1);
+		Y_check.reserve(X_origin.size()-learn_amount+1);
 		
 		for(int i=0; i<X_origin.size(); i++) {
 			vector<double> new_ryad = {1};
 			new_ryad.reserve(level+1);
-			for(int tmp_level=0; tmp_level<level; tmp_level++) {
+			
+			for(int tmp_level=0; tmp_level<function.size(); tmp_level++) {
 				double tmp = 1;
-				for(auto j:combination.at(tmp_level)) {
+				for(auto j:function.at(tmp_level)) {
 					tmp *= X_origin[i][j];
+//					cout<<"i:"<< i <<"; j:"<< j <<"; |"<< X_origin[i][j] <<"| \t";
 				}
+//				cout<<" = "<< tmp <<endl;
 				new_ryad.push_back(tmp);
 			}
-			/*
-			if(i<learn_amount) {
-				X_learn.push_back(new_ryad);
-			}
-			else {
-				X_check.push_back(new_ryad);
-			}
-			*/
+//			cout<<endl;
 			if(i % (X_origin.size()/(X_origin.size()-learn_amount)) == 0) {
 				X_check.push_back(new_ryad);
 				Y_check.push_back(Y_origin.at(i));
@@ -255,12 +365,25 @@ private:
 //		cout<<"check:"<<endl;
 //		print(X_check);
 //		cout<<"Vubirku podileno na navchalnu i perevirochnu"<<endl;
+	}
+	
+	
+	vector<double> GetSolutionForFunction(const vector<vector<int>> function) {
+//		cout<<"GetSolutionForCombination"<<endl;
+		
+//		cout<<"Setting array for function"<<endl;
+//		cout<< function <<endl;
+		SetArrayForMNK(function);
+//		cout<<"learn:"<<endl;
+//		print(X_learn);
+//		cout<<"check:"<<endl;
+//		print(X_check);
 		
 //		cout<<"Setting system from array"<<endl;
 		vector<vector<double>> system_rivnyan;
-		for(int k=0; k<level; k++) {
+		for(int k=0; k<X_learn.front().size(); k++) {
 			vector<double> tmp_ryad;
-			for(int i=0; i<level; i++) {
+			for(int i=0; i<X_learn.front().size(); i++) {
 				double tmp = 0;
 				for(int j=0; j<X_learn.size(); j++) {
 					tmp += X_learn[j][i] * X_learn[j][k];
@@ -269,7 +392,7 @@ private:
 			}
 			system_rivnyan.push_back(tmp_ryad);
 		}
-		for(int i=0; i<level; i++) {
+		for(int i=0; i<X_learn.front().size(); i++) {
 			double tmp = 0;
 			for(int j=0; j<X_learn.size(); j++) {
 				tmp += X_learn[j][i] * Y_learn[j];
@@ -297,34 +420,6 @@ private:
 		}
 //		cout<<"diff = "<< diff <<endl;
 		return diff / Y_check.size();
-	}
-	
-	
-	double CheckSolution_fake(const vector<double> solution) const {
-//		cout<<"CheckSolution_fake"<<endl;
-		vector<double> check = {1, 1, 0.2, 1400, 37.4, 0.2};
-		const double y_check = 80;
-		
-		for(int i=check.size(); i<solution.size(); i++) {
-			double tmp = 1;
-			for(auto j:combinations[i]) {
-				tmp *= check[j];
-			}
-			check.push_back(tmp);
-		}
-//		const vector<double> check = X_learn.at(4);
-//		const double y_check = Y_learn.at(4);
-		
-		double result = 0;
-		
-//		cout<<"solution:\n"<< solution <<endl;
-//		cout<<"check:\n"<< check <<endl;;
-		for(int i=0; i<solution.size(); i++) {
-			result += check[i] * solution[i];
-		}
-//		cout<<"res = "<< result <<"; origin = "<< y_check <<endl;
-//		cout<<endl;
-		return pow(result - y_check, 2);
 	}
 };
 
@@ -373,18 +468,18 @@ int main() {
 	}
 	cout<<endl;
 	
-	cout<<"\nFirst y"<<endl;
+	cout<<"First y"<<endl;
 	MGUA s1(inp, y1);
 	s1.Start();
-	
-	cout<<"\nSecond y"<<endl;
+	/*
+	cout<<"Second y"<<endl;
 	MGUA s2(inp, y2);
 	s2.Start();
 	
-	cout<<"\nThird y"<<endl;
+	cout<<"Third y"<<endl;
 	MGUA s3(inp, y3);
 	s3.Start();
-	/**/
+	*/
 //	cout<<"fin"<<endl;
 		
 	return 0;
