@@ -1,5 +1,5 @@
-//#include <gaussa.h>
-#include <vector>
+#include "gaussa.h"
+
 
 std::vector<double> gaussa(std::vector<std::vector<double>> arr){
 	const int Size = arr.size();
