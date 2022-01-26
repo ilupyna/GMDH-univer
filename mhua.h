@@ -24,7 +24,7 @@ struct InputData {
 	const std::vector<double> Y;
 	
 	InputData(	const std::vector<std::vector<double>>& X_inp, 
-				const std::vector<double>& Y_inp);
+			const std::vector<double>& Y_inp);
 	
 	const int variables() const;
 	const int size() const;
@@ -40,9 +40,9 @@ class ArraySetupForMNK {
 	
 public:
 	void SetupAndFind(	const std::vector<std::vector<int>>& function, 
-						const Positions& positions,
-						const std::vector<std::vector<double>>& X, 
-						const std::vector<double>& Y );
+				const Positions& positions,
+				const std::vector<std::vector<double>>& X, 
+				const std::vector<double>& Y );
 	
 	const std::vector<double> GetSolution() const;
 	const double GetDiff() const;
@@ -50,12 +50,10 @@ public:
 private:
 	void ArrClear();
 	void ArrReserve(const int train_size, const int check_size);
-	
 	void Setup(	const std::vector<std::vector<int>>& function, 
-				const Positions& positions,
-				const std::vector<std::vector<double>>& X, 
-				const std::vector<double>& Y);
-	
+			const Positions& positions,
+			const std::vector<std::vector<double>>& X, 
+			const std::vector<double>& Y);
 	void Solve();
 	void Check();
 };
@@ -72,10 +70,10 @@ class MGUA {
 	
 public:
 	MGUA(	const std::vector<std::vector<double>>& X_inp, 
-			const std::vector<double>& Y_inp, 
-			const double training_part = 0.85,
-			const Positions::Gen train_check_distribution = Positions::Gen::DispY
-		);
+		const std::vector<double>& Y_inp, 
+		const double training_part = 0.85,
+		const Positions::Gen train_check_distribution = Positions::Gen::DispY
+	);
 	
 	void Start();
 	void FreeCheck() const;
