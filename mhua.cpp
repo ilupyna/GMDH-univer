@@ -41,6 +41,14 @@ const int InputData::size() const {
 
 
 
+/*
+	Method which according to the obtained function fills the system of equations for the "Least squares" 
+	and outputs the values of the coefficients using "Gaussian elimination" method. 
+	At first it calls the method `ArraySetupForMNK::Setup(function, positions, X, Y)`, 
+	and then calculates the corresponding sums of products for each of the system variables.
+	Then `ArraySetupForMNK::Solve()` it using the function `gaussa(system_rivnyan)`, 
+	and `ArraySetupForMNK::Check()` with "Least squares" method.
+*/
 void ArraySetupForMNK::SetupAndFind(
 	const vector<vector<int>>& function, 
 	const Positions& positions,
@@ -80,6 +88,10 @@ void ArraySetupForMNK::ArrReserve(const int train_size, const int check_size) {
 }
 
 
+/*
+	Method that fills in a table of variable functions according to the variables used in the function 
+	of products (variable pairs, pairs etc.) to further populate the level system for least squares calculation.
+*/
 void ArraySetupForMNK::Setup(
 	const vector<vector<int>>& function, 
 	const Positions& positions,
@@ -116,7 +128,7 @@ void ArraySetupForMNK::Setup(
 	}
 }
 
-	
+
 void ArraySetupForMNK::Solve() {
 //	cout<<"Setting system from array"<<endl;
 	vector<vector<double>> system_rivnyan;
@@ -145,7 +157,9 @@ void ArraySetupForMNK::Solve() {
 }
 
 
-
+/*
+	A private method of the MGUA class that checks the obtained solution value on test data and outputs the standard deviation value.
+*/
 void ArraySetupForMNK::Check() {
 //	cout<<"CheckSolution"<<endl;
 	double tmp = 0;
@@ -161,6 +175,20 @@ void ArraySetupForMNK::Check() {
 
 
 
+/*
+	Initializing the MGUA class, checks the dimensionality of input data, their storage, as well as performs the division into training and verification samples.
+	
+	Parameters
+	----------
+	X_inp : 2d matrix in vector struct
+		Variables "x".
+	Y_inp : 2d matrix in vector struct
+		Functions "y".
+	training_part: double
+		The coefficient of division into training and test sets.
+	train_check_distribution : enum type {DispY, DispX, Pos, EveryN}
+		Comparison parameter for distribution.
+*/
 MGUA::MGUA(	
 	const vector<vector<double>>& X_inp, 
 	const vector<double>& Y_inp, 
@@ -194,6 +222,17 @@ MGUA::MGUA(
 }
 
 
+/* 
+	Method finding of the GMDH model with threshold self-selection. 
+	
+	The first functions are created from pairs of variables using the MGUA :: FirstSetup () method.
+	Then the following steps are performed cyclically: 
+	1. Find possible solutions by calling the `MGUA::GetSolutionFromFunctions` method,	sorting the solutions obtained on the iteration and deriving the best ones.
+	2. The `MGUA::GetFunctionsFromBestSolutions` method is called to create functions for consideration on the next iteration.
+	3. The `MGUA::NeedAnotherIteration` method is checked to determine if the next iteration of the algorithm is required.
+	After stopping the cyclic search, the best found model is displayed: its type, values of coefficients and loss values for verification data.
+*/
+    
 void MGUA::Start() {
 	// Start all the solution finding process
 	
@@ -240,6 +279,12 @@ void MGUA::Start() {
 }
 
 
+/*
+	Method to verify the obtained models on the entered values.
+	
+	Waits until the values of all values of X functions and values of B are entered, after which it brings them to the value 
+	of the obtained model and estimate of the value of B and the loss, after comparison with the introduced by you.
+*/
 void MGUA::FreeCheck() const {
 	// Opportunity to check finded solution on inputed data
 	cout<<"Enter values of X: "<<endl;
@@ -275,8 +320,9 @@ void MGUA::FreeCheck() const {
 		<<"Standart deviation: "<< pow(Y_input - sum, 2) <<endl;
 	cout<<endl;
 }
-	
-	
+
+
+/* Method that fills the list of functions with all possible input variables. */
 void MGUA::FirstFunctionsSetup() {
 	// all pairs generation
 	for(int i0=0; i0<Data.variables(); i0++) {
@@ -287,6 +333,10 @@ void MGUA::FirstFunctionsSetup() {
 }
 
 
+/* 
+	Method that selects count of top solutions, sorted in descending order of loss, 
+	and then fills the function list with pairs of their variables.
+*/
 void MGUA::SetUpNextFunctionsFromBestSolutions(const int count) {
 	vector<vector<vector<int>>> variables;
 	for(int i=0; i<count && i<solutions_by_iterations.back().size(); i++) {
@@ -456,6 +506,14 @@ Positions MGUA::GetPosByEveryN(const int train_amount) const {
 }
 
 
+/*
+	Method that returns the truth value if another iteration is required. 
+	
+	Alternate verification of conditions: 
+	1. The existence of at least 2 solutions on the last iteration.
+	2. Conducting at least 2 iterations of finding solutions. 
+	3. Reducing the value of the loss on the last iteration, compared with the previous one.
+*/
 bool MGUA::NeedAnotherIteration() const {
 	if(solutions_by_iterations.back().size() < 2) {
 		// We can't check enything else in this case
@@ -470,6 +528,13 @@ bool MGUA::NeedAnotherIteration() const {
 }
 
 
+/*
+	Method that performs a search of functions to calculate their coefficients, obtain loss values and save them. 
+	
+	For each function `func` from the list calls the methods `ArraySetupForMNK::GetSolution()`, 
+	the method `ArraySetupForMNK::GetDiff()` checks the conditions of existence of the solution for the formed system of equations
+	and if there is a solution adds it to the array with the value of the function and calculated loss.
+*/
 void MGUA::GetSolutionFromFunctions() {
 	// Setting up and solving system by Least squares method
 	// if ok thed add to solution array

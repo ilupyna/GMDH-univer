@@ -6,6 +6,11 @@
 #include "gaussa.h"
 
 
+/**
+ * A structure for storing the values of solutions,
+ * consisting the function form in the combinations of variables format,
+ * the values of the coefficients of the function and the values of the loss.
+ */
 struct Solution {
 	std::vector<std::vector<int>> func;
 	std::vector<double> A;
@@ -24,7 +29,7 @@ struct InputData {
 	const std::vector<double> Y;
 	
 	InputData(	const std::vector<std::vector<double>>& X_inp, 
-			const std::vector<double>& Y_inp);
+				const std::vector<double>& Y_inp);
 	
 	const int variables() const;
 	const int size() const;
@@ -40,9 +45,9 @@ class ArraySetupForMNK {
 	
 public:
 	void SetupAndFind(	const std::vector<std::vector<int>>& function, 
-				const Positions& positions,
-				const std::vector<std::vector<double>>& X, 
-				const std::vector<double>& Y );
+						const Positions& positions,
+						const std::vector<std::vector<double>>& X, 
+						const std::vector<double>& Y );
 	
 	const std::vector<double> GetSolution() const;
 	const double GetDiff() const;
@@ -51,14 +56,15 @@ private:
 	void ArrClear();
 	void ArrReserve(const int train_size, const int check_size);
 	void Setup(	const std::vector<std::vector<int>>& function, 
-			const Positions& positions,
-			const std::vector<std::vector<double>>& X, 
-			const std::vector<double>& Y);
+				const Positions& positions,
+				const std::vector<std::vector<double>>& X, 
+				const std::vector<double>& Y);
 	void Solve();
 	void Check();
 };
 
 
+/* Main GMDH class */
 class MGUA {
 	const InputData Data;
 	
@@ -70,9 +76,9 @@ class MGUA {
 	
 public:
 	MGUA(	const std::vector<std::vector<double>>& X_inp, 
-		const std::vector<double>& Y_inp, 
-		const double training_part = 0.85,
-		const Positions::Gen train_check_distribution = Positions::Gen::DispY
+			const std::vector<double>& Y_inp, 
+			const double training_part = 0.85,
+			const Positions::Gen train_check_distribution = Positions::Gen::DispY
 	);
 	
 	void Start();
