@@ -18,5 +18,5 @@ After executing the GMDH process, the user is given the opportunity to check the
 
 
 ### The values of the coefficients in output should be understood as follows:
-- {0, 1} is a pair of coefficients 0 and 1, and therefore the term of the equation X {0, 1} is a multiplication: x1 * x2. 
-- {{3,3}, {1, 2}} is a multiplication: x3 * x3 * x1 * x2, or: x1 * x2 * x3<sup>2</sup>.
+- {0, 1} is a pair of coefficients 0 and 1, and therefore the term of the equation X {0, 1} is a multiplication: x<sub>1</sub> * x<sub>2</sub> . 
+- {{3,3}, {1, 2}} is a multiplication: x<sub>3</sub> * x<sub>3</sub> * x<sub>1</sub> * x<sub>2</sub> , or: x<sub>1</sub> * x<sub>2</sub> * x<sub>3</sub><sup>2</sup>.
