@@ -7,6 +7,12 @@
 using namespace std;
 
 
+/*
+	The function reads data from the file `FILENAME` with certain structure:
+	in the first line reads the value of the number of variables X and Y 
+	then goes variables and function values to the end of the file.
+	After reading, the values of X and Y are transmitted to the output in the form of two arrays.
+*/
 const pair<vector<vector<double>>, vector<vector<double>>> ReadFromFile(const string FILENAME = "input.txt") {
 	// Read X array and Y from file where
 	// two ints are in the first line: amount of X and Y variables for each next line
