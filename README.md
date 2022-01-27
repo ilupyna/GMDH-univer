@@ -15,3 +15,8 @@ The initial data is read from a file that has a specific structure with several 
 3. Display of the optimal model: used variables and found coefficients;
 
 After executing the GMDH process, the user is given the opportunity to check the found functions on external data by [``` FreeCheck ```](mhua.cpp#L243-L277).
+
+
+### The values of the coefficients in output should be understood as follows:
+- {0, 1} is a pair of coefficients 0 and 1, and therefore the term of the equation X {0, 1} is a multiplication: x1 * x2. 
+- {{3,3}, {1, 2}} is a multiplication: x3 * x3 * x1 * x2, or: x1 * x2 * x3<sup>2</sup>.
